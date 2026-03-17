@@ -1,0 +1,146 @@
+@import "tailwindcss";
+
+html {
+  overflow-x: hidden;
+}
+
+body {
+  font-family: var(--font-jakarta), sans-serif;
+  overflow-x: hidden;
+}
+
+.academy-page img {
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.awards-page img {
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.students-page img {
+  user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: none;
+}
+
+.hero-no-drag img {
+  user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: none;
+}
+
+@layer utilities {
+  .animate-marquee {
+    animation: marquee 25s linear infinite;
+  }
+}
+
+@layer utilities {
+  .reveal-base {
+    transform: translateY(1.5rem);
+    transition-property: all;
+    transition-duration: 700ms;
+    transition-timing-function: ease-out;
+    will-change: transform;
+    opacity: 0;
+  }
+
+  .reveal-visible {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@layer utilities {
+  .text-gradient-warm {
+    background-image: linear-gradient(to right, #F97316, #F97316, #EAB308);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+}
+
+@layer components {
+  .card-bg-grid-cream {
+    background-image: linear-gradient(
+        rgba(226, 232, 240, 0.35) 1px,
+        transparent 1px
+      ),
+      linear-gradient(90deg, rgba(226, 232, 240, 0.35) 1px, transparent 1px);
+    background-size: 40px 40px;
+    background-color: #fff9f0;
+  }
+
+  .card-bg-grid-blue {
+    background-image: linear-gradient(
+        rgba(226, 232, 240, 0.35) 1px,
+        transparent 1px
+      ),
+      linear-gradient(90deg, rgba(226, 232, 240, 0.35) 1px, transparent 1px);
+    background-size: 40px 40px;
+    background-color: #eef6ff;
+  }
+
+  .grid-lines-bg {
+    background-image: linear-gradient(
+        rgba(226, 232, 240, 0.28) 1px,
+        transparent 1px
+      ),
+      linear-gradient(90deg, rgba(226, 232, 240, 0.28) 1px, transparent 1px);
+    background-size: 40px 40px;
+    background-color: #ffffff;
+  }
+
+  .grid-lines-bg-dark {
+    background-image: linear-gradient(
+        rgba(255, 255, 255, 0.03) 2px,
+        transparent 2px
+      ),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.03) 2px, transparent 2px);
+    background-size: 80px 80px;
+  }
+}
+
+.footer {
+  background-image: url("/images/backgroundFooter.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+
+
+.hero {
+  
+  background-image: url("/images/SectionHeader/HeroBannerBackground.png");
+   background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.talentHero {
+  background-image: url("/images/heroBannerTalent.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.mission-hero {
+  background-image: url("/images/Mission/mission-hero.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* Animation */
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
