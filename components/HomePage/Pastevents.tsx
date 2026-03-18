@@ -23,18 +23,15 @@ export default function Pastevents(): JSX.Element {
             captured along the way.
           </p>
         </header>
-        <div
-          className="grid grid-cols-3 gap-3 sm:gap-4 mb-16"
-          aria-label="Past event photos"
-        >
-          {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((i) => (
-            <div
-              key={i}
-              className="aspect-[4/3] rounded-lg bg-slate-200/80 overflow-hidden"
-            >
-              {/* Replace with <Image src={...} /> when you have event photos in public/images/past-events/ */}
-            </div>
-          ))}
+        <div className="mb-16 overflow-hidden rounded-xl" aria-label="Past event collage">
+          <Image
+            src="/images/Mission/collage_final.jpg"
+            alt="Moments from our tour across Canada — inclusion and accessibility events"
+            width={1200}
+            height={800}
+            className="h-auto w-full object-cover"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 90vw, 1200px"
+          />
         </div>
 
         {/* Organizer & Partner — right-aligned heading above cards */}
