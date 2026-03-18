@@ -10,8 +10,10 @@
   },
   "dependencies": {
     "firebase": "^12.6.0",
+    "ical": "^0.8.0",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.554.0",
+    "maplibre-gl": "^4.7.1",
     "next": "^16.0.10",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
@@ -19,6 +21,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/ical": "^0.8.3",
     "@types/leaflet": "^1.9.21",
     "@types/node": "^25.0.1",
     "@types/react": "^19.2.7",

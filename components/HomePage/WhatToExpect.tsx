@@ -1,4 +1,8 @@
 import { JSX } from "react";
+import { Briefcase, Handshake, BarChart3, Cpu, BookOpen } from "lucide-react";
+
+const iconClass = "h-14 w-14 text-white mx-auto";
+
 export default function WhatToExpect(): JSX.Element {
   return (
       <section
@@ -37,7 +41,9 @@ export default function WhatToExpect(): JSX.Element {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-0 divide-y divide-white/10 lg:divide-y-0 lg:divide-x overflow-hidden rounded-2xl">
 
               <div className="p-10 flex flex-col">
-                <div className="text-6xl mb-6 flex justify-center">💼</div>
+                <div className="mb-6 flex justify-center">
+                  <Briefcase className={iconClass} strokeWidth={1.5} />
+                </div>
                 <h3 className="text-2xl font-semibold text-center leading-tight">
                   Job Seeker Sessions
                 </h3>
@@ -49,21 +55,27 @@ export default function WhatToExpect(): JSX.Element {
               </div>
 
               <div className="p-10 flex flex-col">
-                <div className="text-6xl mb-6 flex justify-center">🤝</div>
+                <div className="mb-6 flex justify-center">
+                  <Handshake className={iconClass} strokeWidth={1.5} />
+                </div>
                 <h3 className="text-2xl font-semibold text-center leading-tight">
                   Inclusive Hiring Dialogues
                 </h3>
               </div>
 
               <div className="p-10 flex flex-col">
-                <div className="text-6xl mb-6 flex justify-center">📊</div>
+                <div className="mb-6 flex justify-center">
+                  <BarChart3 className={iconClass} strokeWidth={1.5} />
+                </div>
                 <h3 className="text-2xl font-semibold text-center leading-tight">
                   DEI Leadership Panels
                 </h3>
               </div>
 
               <div className="p-10 flex flex-col">
-                <div className="text-6xl mb-6 flex justify-center">💻</div>
+                <div className="mb-6 flex justify-center">
+                  <Cpu className={iconClass} strokeWidth={1.5} />
+                </div>
                 <h3 className="text-2xl font-semibold text-center leading-tight">
                   Assistive Technology Showcase
                 </h3>
@@ -71,7 +83,9 @@ export default function WhatToExpect(): JSX.Element {
 
 
               <div className="p-10 flex flex-col">
-                <div className="text-6xl mb-6 flex justify-center">📖</div>
+                <div className="mb-6 flex justify-center">
+                  <BookOpen className={iconClass} strokeWidth={1.5} />
+                </div>
                 <h3 className="text-2xl font-semibold text-center leading-tight">
                   DEI Leadership Panels
                 </h3>

@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { JSX, useMemo, useState } from "react";
+import { JSX, useState } from "react";
 
 const TourCitiesMap = dynamic(
   () => import("./TourCitiesMap").then((m) => m.default),
@@ -21,25 +21,8 @@ export const TOUR_CITIES = [
 
 type TourCity = (typeof TOUR_CITIES)[number];
 
-// Placeholder events — replace with real data/API later
-const PLACEHOLDER_EVENTS: { city: TourCity; date: string; title: string }[] = [
-  { city: "Ottawa", date: "TBA", title: "Enable Canada Tour — Ottawa" },
-  { city: "Toronto", date: "TBA", title: "Enable Canada Tour — Toronto" },
-  { city: "Montreal", date: "TBA", title: "Enable Canada Tour — Montreal" },
-  { city: "Halifax", date: "TBA", title: "Enable Canada Tour — Halifax" },
-  { city: "St. John's", date: "TBA", title: "Enable Canada Tour — St. John's" },
-  { city: "Charlottetown", date: "TBA", title: "Enable Canada Tour — Charlottetown" },
-  { city: "Yellowknife", date: "TBA", title: "Enable Canada Tour — Yellowknife" },
-  { city: "Whitehorse", date: "TBA", title: "Enable Canada Tour — Whitehorse" },
-];
-
 export default function Cities(): JSX.Element {
   const [selectedCity, setSelectedCity] = useState<TourCity | "All">("All");
-
-  const filteredEvents = useMemo(() => {
-    if (selectedCity === "All") return PLACEHOLDER_EVENTS;
-    return PLACEHOLDER_EVENTS.filter((e) => e.city === selectedCity);
-  }, [selectedCity]);
 
   return (
     <section id="cities" aria-labelledby="cities-heading" className="relative z-10 scroll-mt-24">
@@ -120,29 +103,21 @@ export default function Cities(): JSX.Element {
             className="mt-8 mx-auto max-w-3xl rounded-2xl bg-white p-6 sm:p-8 shadow-[0_4px_20px_rgba(0,0,0,0.06)]"
             style={{ boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.06)" }}
           >
-            <ul className="space-y-4 text-left" aria-label="Upcoming events">
-              {filteredEvents.map((event, i) => (
-                <li
-                  key={`${event.city}-${i}`}
-                  className="flex flex-col gap-2 rounded-xl border border-slate-100 bg-slate-50/50 p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
-                >
-                  <div>
-                    <h4 className="font-semibold text-slate-900">{event.title}</h4>
-                    <p className="mt-0.5 text-sm text-slate-500">
-                      {event.city} · {event.date}
-                    </p>
-                  </div>
-                  <div className="flex shrink-0">
-                    <a
-                      href="#"
-                      className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2"
-                    >
-                      Event details & registration
-                    </a>
-                  </div>
-                </li>
-              ))}
-            </ul>
+            <div className="w-full">
+              <div className="relative w-full overflow-hidden rounded-xl border border-slate-200 bg-light">
+                <iframe
+                  title="Luma events calendar"
+                  src="https://luma.com/embed/calendar/cal-IHaOFJmuYTyy8x5/events"
+                  className="block w-full"
+                  style={{ height: 560 }}
+                  frameBorder={0}
+                  allowFullScreen
+                />
+              </div>
+              <p className="mt-3 text-left text-xs text-slate-500">
+                Tip: use the calendar controls to switch events and open registration.
+              </p>
+            </div>
           </div>
         </div>
         </div>

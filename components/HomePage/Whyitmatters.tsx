@@ -31,12 +31,12 @@ export default function Whyitmatters(): JSX.Element {
       id="why"
       aria-labelledby="why-heading"
       aria-describedby="why-subtitle"
-      className="relative z-10 scroll-mt-24 overflow-hidden pb-10 pt-10 sm:pb-14 sm:pt-12 lg:pb-16 lg:pt-14"
+      className="relative z-10 scroll-mt-24 overflow-hidden pb-10 pt-24 sm:pb-14 sm:pt-32 lg:pb-16 lg:pt-40"
       style={{ backgroundColor: "#F8F8F8" }}
     >
-      {/* Decorative dots — upper right, light gray #D8D8D8 feel */}
+      {/* Decorative dots — upper right, pushed down so not attached to map */}
       <div
-        className="pointer-events-none absolute right-0 top-0 opacity-50"
+        className="pointer-events-none absolute right-0 top-16 opacity-50 sm:top-24 lg:top-32"
         aria-hidden
       >
         <Image

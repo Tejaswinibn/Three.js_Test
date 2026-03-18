@@ -7,8 +7,15 @@ const CONFIG = {
   map: {
     outlineColor: "#ffffff",
     outlineWidth: 1.2,
-    /** Line2 pixel width for glowing borders */
+    /** Line2 pixel width for coast outline */
     line2Width: 2.5,
+    /** Province/territory borders inside Canada — slightly thicker and tinted so they stand out */
+    provincesLineWidth: 3.5,
+    provincesOutlineColor: "#94a3b8",
+    /** Base fill for land (interior) */
+    landFillColor: "#243044",
+    /** Fill when mouse hovers over a region */
+    landHighlightColor: "#3d4f6e",
     scale: 1.5,
     scaleX: 1,
     scaleZ: 1,
@@ -34,11 +41,25 @@ const CONFIG = {
       { lat: 45.42, lng: -75.7, name: "Ottawa", date: "TBA", description: "Enable Canada Tour stop — Ottawa. Event details and registration coming soon." },
       { lat: 43.65, lng: -79.38, name: "Toronto", date: "TBA", description: "Enable Canada Tour stop — Toronto. Event details and registration coming soon." },
       { lat: 45.5, lng: -73.57, name: "Montreal", date: "TBA", description: "Enable Canada Tour stop — Montreal. Event details and registration coming soon." },
+      { lat: 46.81, lng: -71.21, name: "Quebec City", date: "TBA", description: "Enable Canada Tour stop — Quebec City. Event details and registration coming soon." },
+      { lat: 43.09, lng: -79.08, name: "Niagara Falls", date: "TBA", description: "Enable Canada Tour stop — Niagara Falls. Event details and registration coming soon." },
+      { lat: 42.98, lng: -81.25, name: "London", date: "TBA", description: "Enable Canada Tour stop — London. Event details and registration coming soon." },
+      { lat: 46.49, lng: -80.99, name: "Sudbury", date: "TBA", description: "Enable Canada Tour stop — Sudbury. Event details and registration coming soon." },
+      { lat: 49.28, lng: -123.12, name: "Vancouver", date: "TBA", description: "Enable Canada Tour stop — Vancouver. Event details and registration coming soon." },
+      { lat: 48.43, lng: -123.37, name: "Victoria", date: "TBA", description: "Enable Canada Tour stop — Victoria. Event details and registration coming soon." },
+      { lat: 51.04, lng: -114.07, name: "Calgary", date: "TBA", description: "Enable Canada Tour stop — Calgary. Event details and registration coming soon." },
+      { lat: 53.55, lng: -113.49, name: "Edmonton", date: "TBA", description: "Enable Canada Tour stop — Edmonton. Event details and registration coming soon." },
+      { lat: 52.16, lng: -106.67, name: "Saskatoon", date: "TBA", description: "Enable Canada Tour stop — Saskatoon. Event details and registration coming soon." },
+      { lat: 50.45, lng: -104.61, name: "Regina", date: "TBA", description: "Enable Canada Tour stop — Regina. Event details and registration coming soon." },
+      { lat: 49.9, lng: -97.14, name: "Winnipeg", date: "TBA", description: "Enable Canada Tour stop — Winnipeg. Event details and registration coming soon." },
       { lat: 44.65, lng: -63.57, name: "Halifax", date: "TBA", description: "Enable Canada Tour stop — Halifax. Event details and registration coming soon." },
+      { lat: 45.27, lng: -66.06, name: "Saint John", date: "TBA", description: "Enable Canada Tour stop — Saint John. Event details and registration coming soon." },
+      { lat: 46.09, lng: -64.78, name: "Moncton", date: "TBA", description: "Enable Canada Tour stop — Moncton. Event details and registration coming soon." },
       { lat: 47.57, lng: -52.71, name: "St. John's", date: "TBA", description: "Enable Canada Tour stop — St. John's. Event details and registration coming soon." },
       { lat: 46.24, lng: -63.13, name: "Charlottetown", date: "TBA", description: "Enable Canada Tour stop — Charlottetown. Event details and registration coming soon." },
       { lat: 62.45, lng: -114.37, name: "Yellowknife", date: "TBA", description: "Enable Canada Tour stop — Yellowknife. Event details and registration coming soon." },
       { lat: 60.72, lng: -135.06, name: "Whitehorse", date: "TBA", description: "Enable Canada Tour stop — Whitehorse. Event details and registration coming soon." },
+      { lat: 63.75, lng: -68.52, name: "Iqaluit", date: "TBA", description: "Enable Canada Tour stop — Iqaluit. Event details and registration coming soon." },
     ],
     markerSize: 0.001,
     markerGlowSize: 0.012,
@@ -75,6 +96,7 @@ export default function CanadaMap(): JSX.Element {
   const cancelledRef = useRef(false);
   const rendererRef = useRef<import("three").WebGLRenderer | null>(null);
   const [selectedCityIndex, setSelectedCityIndex] = useState<number | null>(null);
+  const [lumaByCity, setLumaByCity] = useState<Record<string, { title: string; start: string; url?: string }>>({});
   const setSelectedCityIndexRef = useRef(setSelectedCityIndex);
   setSelectedCityIndexRef.current = setSelectedCityIndex;
 
@@ -100,6 +122,8 @@ export default function CanadaMap(): JSX.Element {
       z: CONFIG.map.rotation.z,
     };
     let mapGroup: import("three").Group;
+    let landFillMeshes: import("three").Mesh[] = [];
+    let hoveredLandMesh: import("three").Mesh | null = null;
     let raycastMesh: import("three").InstancedMesh | null = null;
     let raycaster: import("three").Raycaster | null = null;
     let mouseVector: import("three").Vector2 | null = null;
@@ -107,6 +131,9 @@ export default function CanadaMap(): JSX.Element {
     let onMouseLeaveHandler: (() => void) | undefined;
     let onWheelHandler: ((e: WheelEvent) => void) | undefined;
     let onClickHandler: ((e: MouseEvent) => void) | undefined;
+    let onTouchStartHandler: ((e: TouchEvent) => void) | undefined;
+    let onTouchMoveHandler: ((e: TouchEvent) => void) | undefined;
+    let onTouchEndHandler: ((e: TouchEvent) => void) | undefined;
     const lookAtVector = { x: CONFIG.camera.lookAt.x, y: CONFIG.camera.lookAt.y, z: CONFIG.camera.lookAt.z };
 
     const init = async () => {
@@ -125,6 +152,46 @@ export default function CanadaMap(): JSX.Element {
       const { Line2 } = await import("three/examples/jsm/lines/Line2.js");
       const { LineGeometry } = await import("three/examples/jsm/lines/LineGeometry.js");
       const { LineMaterial } = await import("three/examples/jsm/lines/LineMaterial.js");
+
+      // Load Luma events and map them to the nearest tour city marker (by GEO if available, fallback to text).
+      try {
+        const r = await fetch("/api/luma/events");
+        if (r.ok) {
+          const data = (await r.json()) as {
+            events?: Array<{
+              title: string;
+              start: string;
+              location?: string;
+              url?: string;
+              geo?: { lat: number; lng: number };
+            }>;
+          };
+          const byCity: Record<string, { title: string; start: string; url?: string }> = {};
+          for (const e of data.events || []) {
+            let city: string | undefined;
+            if (e.geo && Number.isFinite(e.geo.lat) && Number.isFinite(e.geo.lng)) {
+              let best: { name: string; d: number } | null = null;
+              for (const p of CONFIG.tour.points) {
+                const d = Math.hypot(p.lat - e.geo.lat, p.lng - e.geo.lng);
+                if (!best || d < best.d) best = { name: p.name, d };
+              }
+              if (best && best.d < 2.0) city = best.name;
+            }
+            if (!city) {
+              const hay = `${e.title} ${(e.location || "")}`.toLowerCase();
+              city = CONFIG.tour.points.find((p) => hay.includes(p.name.toLowerCase()))?.name;
+            }
+            if (!city) continue;
+            // keep earliest upcoming per city
+            if (!byCity[city] || (e.start && e.start < byCity[city].start)) {
+              byCity[city] = { title: e.title, start: e.start, url: e.url };
+            }
+          }
+          if (!cancelledRef.current) setLumaByCity(byCity);
+        }
+      } catch {
+        // ignore
+      }
 
       const bounds = CONFIG.mapBounds;
       type Bounds = typeof bounds;
@@ -207,8 +274,8 @@ export default function CanadaMap(): JSX.Element {
           for (const p of points) flat.push(p.x, p.y, p.z);
           const lineGeom = new LineGeometry().setPositions(flat);
           const lineMat = new LineMaterial({
-            color: CONFIG.map.outlineColor,
-            linewidth: CONFIG.map.line2Width,
+            color: CONFIG.map.provincesOutlineColor,
+            linewidth: CONFIG.map.provincesLineWidth,
             resolution,
           });
           borderLineMaterials.push(lineMat);
@@ -227,6 +294,39 @@ export default function CanadaMap(): JSX.Element {
           }
         }
         return group;
+      }
+
+      /** Filled land polygons (interiors) for hover highlight */
+      function buildLandFillFromGeoJson(
+        coordinates: number[][][][],
+        b: Bounds
+      ): { group: import("three").Group; meshes: import("three").Mesh[] } {
+        const group = new THREE.Group();
+        const meshes: import("three").Mesh[] = [];
+        const y = -0.0005; // just below border lines so lines draw on top
+        for (const polygon of coordinates) {
+          const exterior = polygon[0];
+          if (!exterior || exterior.length < 3) continue;
+          const points = ringToPoints(exterior, b, y);
+          const shape = new THREE.Shape();
+          shape.moveTo(points[0].x, points[0].z);
+          for (let i = 1; i < points.length; i++) {
+            shape.lineTo(points[i].x, points[i].z);
+          }
+          const geom = new THREE.ShapeGeometry(shape);
+          geom.translate(0, y, 0);
+          geom.rotateX(-Math.PI / 2);
+          const mat = new THREE.MeshBasicMaterial({
+            color: CONFIG.map.landFillColor,
+            depthWrite: true,
+            side: THREE.DoubleSide,
+          });
+          const mesh = new THREE.Mesh(geom, mat);
+          mesh.name = "landFill";
+          meshes.push(mesh);
+          group.add(mesh);
+        }
+        return { group, meshes };
       }
 
       function buildTourMarkers(b: Bounds): {
@@ -324,7 +424,7 @@ export default function CanadaMap(): JSX.Element {
       mouseVector = new THREE.Vector2();
 
       function onMouseMove(_e: MouseEvent) {
-        if (!renderer) return;
+        if (!renderer || !raycaster || !mouseVector) return;
         const el = renderer.domElement;
         const rect = el.getBoundingClientRect();
         const w = el.clientWidth;
@@ -333,9 +433,10 @@ export default function CanadaMap(): JSX.Element {
         mouseNormX = ((_e.clientX - rect.left) / w) * 2 - 1;
         mouseNormY = 1 - ((_e.clientY - rect.top) / h) * 2;
 
-        if (tooltipRef.current && raycaster && mouseVector && raycastMesh) {
-          mouseVector.set(mouseNormX, mouseNormY);
-          raycaster.setFromCamera(mouseVector, camera);
+        mouseVector.set(mouseNormX, mouseNormY);
+        raycaster.setFromCamera(mouseVector, camera);
+
+        if (tooltipRef.current && raycastMesh) {
           const hits = raycaster.intersectObject(raycastMesh);
           if (hits.length > 0) {
             const inst = hits[0] as { instanceId?: number };
@@ -349,14 +450,129 @@ export default function CanadaMap(): JSX.Element {
             tooltipRef.current.style.display = "none";
           }
         }
+
+        if (landFillMeshes.length > 0) {
+          const landHits = raycaster.intersectObjects(landFillMeshes);
+          if (landHits.length > 0) {
+            const hitMesh = landHits[0].object as import("three").Mesh;
+            if (hitMesh !== hoveredLandMesh) {
+              if (hoveredLandMesh && hoveredLandMesh.material) {
+                (hoveredLandMesh.material as import("three").MeshBasicMaterial).color.set(CONFIG.map.landFillColor);
+              }
+              hoveredLandMesh = hitMesh;
+              (hitMesh.material as import("three").MeshBasicMaterial).color.set(CONFIG.map.landHighlightColor);
+            }
+          } else {
+            if (hoveredLandMesh && hoveredLandMesh.material) {
+              (hoveredLandMesh.material as import("three").MeshBasicMaterial).color.set(CONFIG.map.landFillColor);
+              hoveredLandMesh = null;
+            }
+          }
+        }
       }
       function onMouseLeave() {
         if (tooltipRef.current) tooltipRef.current.style.display = "none";
+        if (hoveredLandMesh && hoveredLandMesh.material) {
+          (hoveredLandMesh.material as import("three").MeshBasicMaterial).color.set(CONFIG.map.landFillColor);
+          hoveredLandMesh = null;
+        }
       }
       onMouseMoveHandler = onMouseMove;
       onMouseLeaveHandler = onMouseLeave;
       renderer.domElement.addEventListener("mousemove", onMouseMove);
       renderer.domElement.addEventListener("mouseleave", onMouseLeave);
+
+      // Effective zoom limits: tighter on mobile so the map feels contained
+      function getZoomLimits() {
+        const narrow = typeof window !== "undefined" && window.innerWidth < 768;
+        return {
+          min: narrow ? 3 : CONFIG.camera.zoomMin,
+          max: narrow ? 8 : CONFIG.camera.zoomMax,
+        };
+      }
+
+      // Touch UX (mobile): drag to rotate, pinch to zoom.
+      let touchDragging = false;
+      let lastTouchX = 0;
+      let lastTouchY = 0;
+      let lastPinchDist: number | null = null;
+
+      function getPinchDistance(t1: Touch, t2: Touch) {
+        const dx = t1.clientX - t2.clientX;
+        const dy = t1.clientY - t2.clientY;
+        return Math.hypot(dx, dy);
+      }
+
+      function onTouchStart(e: TouchEvent) {
+        if (!renderer) return;
+        if (e.touches.length === 1) {
+          touchDragging = true;
+          lastTouchX = e.touches[0].clientX;
+          lastTouchY = e.touches[0].clientY;
+          lastPinchDist = null;
+        } else if (e.touches.length >= 2) {
+          touchDragging = false;
+          lastPinchDist = getPinchDistance(e.touches[0], e.touches[1]);
+        }
+      }
+
+      function onTouchMove(e: TouchEvent) {
+        if (!renderer || !camera) return;
+        const el = renderer.domElement;
+        const rect = el.getBoundingClientRect();
+        const w = el.clientWidth || rect.width || 1;
+        const h = el.clientHeight || rect.height || 1;
+
+        // Prevent page scroll while interacting with the map.
+        if (e.cancelable) e.preventDefault();
+
+        if (e.touches.length >= 2) {
+          const dist = getPinchDistance(e.touches[0], e.touches[1]);
+          if (lastPinchDist) {
+            const ratio = lastPinchDist / dist;
+            const THREE = require("three");
+            const { min: zoomMin, max: zoomMax } = getZoomLimits();
+            const lookAt = new THREE.Vector3(lookAtVector.x, lookAtVector.y, lookAtVector.z);
+            const dir = new THREE.Vector3().subVectors(camera.position, lookAt).normalize();
+            let d = camera.position.distanceTo(lookAt);
+            d = Math.min(zoomMax, Math.max(zoomMin, d * ratio));
+            camera.position.copy(lookAt).add(dir.multiplyScalar(d));
+          }
+          lastPinchDist = dist;
+          return;
+        }
+
+        if (touchDragging && e.touches.length === 1) {
+          const t = e.touches[0];
+          const dx = t.clientX - lastTouchX;
+          const dy = t.clientY - lastTouchY;
+          lastTouchX = t.clientX;
+          lastTouchY = t.clientY;
+
+          // Convert drag delta into normalized rotation driver.
+          mouseNormX = Math.max(-1, Math.min(1, mouseNormX + (dx / w) * 2));
+          mouseNormY = Math.max(-1, Math.min(1, mouseNormY - (dy / h) * 2));
+        }
+      }
+
+      function onTouchEnd(e: TouchEvent) {
+        if (e.touches.length === 0) {
+          touchDragging = false;
+          lastPinchDist = null;
+        } else if (e.touches.length === 1) {
+          touchDragging = true;
+          lastTouchX = e.touches[0].clientX;
+          lastTouchY = e.touches[0].clientY;
+          lastPinchDist = null;
+        }
+      }
+
+      onTouchStartHandler = onTouchStart;
+      onTouchMoveHandler = onTouchMove;
+      onTouchEndHandler = onTouchEnd;
+      renderer.domElement.addEventListener("touchstart", onTouchStart, { passive: true });
+      renderer.domElement.addEventListener("touchmove", onTouchMove, { passive: false });
+      renderer.domElement.addEventListener("touchend", onTouchEnd, { passive: true });
 
       // Scroll to zoom: only allow page scroll when touch device AND narrow; otherwise zoom the map
       function onWheel(e: WheelEvent) {
@@ -368,11 +584,12 @@ export default function CanadaMap(): JSX.Element {
         e.preventDefault();
         e.stopPropagation();
         if (!camera) return;
+        const { min: zoomMin, max: zoomMax } = getZoomLimits();
         const lookAt = new THREE.Vector3(lookAtVector.x, lookAtVector.y, lookAtVector.z);
         const dir = new THREE.Vector3().subVectors(camera.position, lookAt).normalize();
         let dist = camera.position.distanceTo(lookAt);
         const delta = e.deltaY > 0 ? 1.15 : 0.87;
-        dist = Math.min(CONFIG.camera.zoomMax, Math.max(CONFIG.camera.zoomMin, dist * delta));
+        dist = Math.min(zoomMax, Math.max(zoomMin, dist * delta));
         camera.position.copy(lookAt).add(dir.multiplyScalar(dist));
       }
       onWheelHandler = onWheel;
@@ -433,6 +650,9 @@ export default function CanadaMap(): JSX.Element {
       try {
         const coords = await loadCanadaGeoJson();
         if (cancelledRef.current) return;
+        const { group: landFillGroup, meshes: fillMeshes } = buildLandFillFromGeoJson(coords, bounds);
+        mapGroup.add(landFillGroup);
+        landFillMeshes = fillMeshes;
         const outlineGroup = buildOutlineFromGeoJson(coords, bounds);
         mapGroup.add(outlineGroup);
         try {
@@ -456,14 +676,34 @@ export default function CanadaMap(): JSX.Element {
       } catch (err) {
         console.warn("GeoJSON load failed, using fallback outline:", err);
         const b = bounds;
-        const pts = FALLBACK_OUTLINE.map(([lng, lat]) => {
+        const fillPts = FALLBACK_OUTLINE.map(([lng, lat]) => {
+          const x = -(((lng - b.lngMin) / (b.lngMax - b.lngMin)) * 2 - 1);
+          const z = ((lat - b.latMin) / (b.latMax - b.latMin)) * 2 - 1;
+          return new THREE.Vector3(x, -0.0005, z);
+        });
+        const shape = new THREE.Shape();
+        shape.moveTo(fillPts[0].x, fillPts[0].z);
+        for (let i = 1; i < fillPts.length; i++) shape.lineTo(fillPts[i].x, fillPts[i].z);
+        const fallbackGeom = new THREE.ShapeGeometry(shape);
+        fallbackGeom.translate(0, -0.0005, 0);
+        fallbackGeom.rotateX(-Math.PI / 2);
+        const fallbackMat = new THREE.MeshBasicMaterial({
+          color: CONFIG.map.landFillColor,
+          depthWrite: true,
+          side: THREE.DoubleSide,
+        });
+        const fallbackMesh = new THREE.Mesh(fallbackGeom, fallbackMat);
+        fallbackMesh.name = "landFill";
+        mapGroup.add(fallbackMesh);
+        landFillMeshes = [fallbackMesh];
+        const linePts = FALLBACK_OUTLINE.map(([lng, lat]) => {
           const x = -(((lng - b.lngMin) / (b.lngMax - b.lngMin)) * 2 - 1);
           const z = ((lat - b.latMin) / (b.latMax - b.latMin)) * 2 - 1;
           return new THREE.Vector3(x, 0, z);
         });
-        pts.push(pts[0].clone());
+        linePts.push(linePts[0].clone());
         const flat: number[] = [];
-        for (const p of pts) flat.push(p.x, p.y, p.z);
+        for (const p of linePts) flat.push(p.x, p.y, p.z);
         const lineGeom = new LineGeometry().setPositions(flat);
         const lineMat = new LineMaterial({
           color: CONFIG.map.outlineColor,
@@ -530,6 +770,9 @@ export default function CanadaMap(): JSX.Element {
         if (onMouseLeaveHandler) ren.domElement.removeEventListener("mouseleave", onMouseLeaveHandler);
         if (onWheelHandler) ren.domElement.removeEventListener("wheel", onWheelHandler);
         if (onClickHandler) ren.domElement.removeEventListener("click", onClickHandler);
+        if (onTouchStartHandler) ren.domElement.removeEventListener("touchstart", onTouchStartHandler);
+        if (onTouchMoveHandler) ren.domElement.removeEventListener("touchmove", onTouchMoveHandler);
+        if (onTouchEndHandler) ren.domElement.removeEventListener("touchend", onTouchEndHandler);
       }
       if (tooltipRef.current) tooltipRef.current.style.display = "none";
       const r = rendererRef.current;
@@ -542,18 +785,21 @@ export default function CanadaMap(): JSX.Element {
   }, []);
 
   const point = selectedCityIndex !== null ? CONFIG.tour.points[selectedCityIndex] : null;
+  const lumaEvent = point ? lumaByCity[point.name] : undefined;
 
   return (
     <section
-      className="relative z-0 w-full overflow-hidden bg-[#182434] touch-pan-y"
-      style={{ minHeight: "clamp(280px, 50vw, 560px)" }}
+      className="relative z-0 w-full overflow-hidden bg-[#182434] touch-pan-y px-4 py-6 sm:px-6 sm:py-8 lg:px-8"
+      style={{ minHeight: "clamp(220px, 36vw, 380px)" }}
       aria-label="Canada tour map"
     >
-      <div
-        ref={containerRef}
-        className="h-full w-full cursor-grab active:cursor-grabbing touch-pan-y"
-        style={{ minHeight: "clamp(280px, 50vw, 560px)" }}
-      />
+      <div className="mx-auto max-w-6xl overflow-hidden rounded-xl shadow-2xl ring-1 ring-white/10">
+        <div
+          ref={containerRef}
+          className="h-full w-full cursor-grab active:cursor-grabbing touch-pan-y"
+          style={{ minHeight: "clamp(220px, 36vw, 380px)" }}
+        />
+      </div>
       <div
         ref={tooltipRef}
         role="tooltip"
@@ -575,16 +821,18 @@ export default function CanadaMap(): JSX.Element {
                 {point.name}
               </h3>
               <p className="mt-1 text-sm text-amber-400/90">
-                Enable Canada Tour · {point.date}
+                {lumaEvent?.start ? `Luma event · ${new Date(lumaEvent.start).toLocaleString()}` : `Enable Canada Tour · ${point.date}`}
               </p>
               <p className="mt-2 text-sm leading-relaxed text-slate-300">
-                {"description" in point ? point.description : "Tour stop — event details and registration coming soon."}
+                {lumaEvent?.title || ("description" in point ? point.description : "Tour stop — event details and registration coming soon.")}
               </p>
               <a
-                href="#cities"
+                href={lumaEvent?.url || "#cities"}
+                target={lumaEvent?.url ? "_blank" : undefined}
+                rel={lumaEvent?.url ? "noreferrer" : undefined}
                 className="mt-4 inline-block rounded-lg bg-amber-500 px-4 py-2.5 text-sm font-semibold text-slate-900 hover:bg-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 focus:ring-offset-slate-900"
               >
-                Event details & registration
+                {lumaEvent?.url ? "Open registration" : "Event details & registration"}
               </a>
             </div>
             <button
