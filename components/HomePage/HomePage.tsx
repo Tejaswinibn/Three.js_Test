@@ -6,6 +6,7 @@ import WhatToExpect from "./WhatToExpect";
 import Cities from "./Cities";
 import WhoItsFor from "./WhoItsFor";
 import Pastevents from "./Pastevents";
+import Speakers from "./Speakers";
 
 export default function HomePage(): JSX.Element {
   return (
@@ -20,7 +21,7 @@ export default function HomePage(): JSX.Element {
 
 	  <WhatToExpect />
 
-      
+      <Speakers />
 
       <Cities />
 

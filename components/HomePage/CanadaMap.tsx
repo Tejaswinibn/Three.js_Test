@@ -530,7 +530,6 @@ export default function CanadaMap(): JSX.Element {
           const dist = getPinchDistance(e.touches[0], e.touches[1]);
           if (lastPinchDist) {
             const ratio = lastPinchDist / dist;
-            const THREE = require("three");
             const { min: zoomMin, max: zoomMax } = getZoomLimits();
             const lookAt = new THREE.Vector3(lookAtVector.x, lookAtVector.y, lookAtVector.z);
             const dir = new THREE.Vector3().subVectors(camera.position, lookAt).normalize();
@@ -757,6 +756,7 @@ export default function CanadaMap(): JSX.Element {
       animate();
     };
 
+    const tooltipEl = tooltipRef.current;
     init();
 
     return () => {
@@ -774,7 +774,7 @@ export default function CanadaMap(): JSX.Element {
         if (onTouchMoveHandler) ren.domElement.removeEventListener("touchmove", onTouchMoveHandler);
         if (onTouchEndHandler) ren.domElement.removeEventListener("touchend", onTouchEndHandler);
       }
-      if (tooltipRef.current) tooltipRef.current.style.display = "none";
+      if (tooltipEl) tooltipEl.style.display = "none";
       const r = rendererRef.current;
       if (r && container && r.domElement.parentNode === container) {
         container.removeChild(r.domElement);
@@ -809,44 +809,71 @@ export default function CanadaMap(): JSX.Element {
       />
       {/* Tour info panel when a city is clicked */}
       {point && (
-        <div
-          className="absolute bottom-4 left-4 right-4 z-[100] max-w-md rounded-xl border border-white/20 bg-slate-900/95 p-5 shadow-2xl backdrop-blur sm:left-6 sm:right-auto"
-          role="dialog"
-          aria-labelledby="tour-info-title"
-          aria-modal="true"
-        >
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h3 id="tour-info-title" className="text-xl font-bold text-white">
-                {point.name}
-              </h3>
-              <p className="mt-1 text-sm text-amber-400/90">
-                {lumaEvent?.start ? `Luma event · ${new Date(lumaEvent.start).toLocaleString()}` : `Enable Canada Tour · ${point.date}`}
-              </p>
-              <p className="mt-2 text-sm leading-relaxed text-slate-300">
-                {lumaEvent?.title || ("description" in point ? point.description : "Tour stop — event details and registration coming soon.")}
-              </p>
+        <>
+          {/* Mobile: backdrop to allow tap-outside close */}
+          <button
+            type="button"
+            className="fixed inset-0 z-[90] bg-black/30 sm:hidden"
+            aria-label="Close tour info"
+            onClick={() => setSelectedCityIndex(null)}
+          />
+
+          <div
+            className="fixed inset-x-3 bottom-3 z-[100] max-h-[60vh] overflow-auto rounded-2xl border border-white/15 bg-slate-900/95 p-4 shadow-2xl backdrop-blur sm:absolute sm:bottom-4 sm:left-6 sm:right-auto sm:inset-x-auto sm:max-h-none sm:overflow-visible sm:rounded-xl sm:border-white/20 sm:p-5"
+            role="dialog"
+            aria-labelledby="tour-info-title"
+            aria-modal="true"
+          >
+            <div className="sm:hidden mx-auto mb-2 h-1.5 w-10 rounded-full bg-white/20" aria-hidden />
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <h3 id="tour-info-title" className="text-lg font-bold text-white sm:text-xl">
+                  {point.name}
+                </h3>
+                <p className="mt-1 text-xs text-amber-400/90 sm:text-sm">
+                  {lumaEvent?.start
+                    ? `Luma event · ${new Date(lumaEvent.start).toLocaleString()}`
+                    : `Enable Canada Tour · ${point.date}`}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedCityIndex(null)}
+                className="shrink-0 rounded-xl p-2 text-slate-200/80 hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/30"
+                aria-label="Close tour info"
+              >
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <p className="mt-3 whitespace-normal break-words text-sm leading-relaxed text-slate-200/90 sm:text-sm">
+              {lumaEvent?.title ||
+                ("description" in point
+                  ? point.description
+                  : "Tour stop — event details and registration coming soon.")}
+            </p>
+
+            <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center">
               <a
                 href={lumaEvent?.url || "#cities"}
                 target={lumaEvent?.url ? "_blank" : undefined}
                 rel={lumaEvent?.url ? "noreferrer" : undefined}
-                className="mt-4 inline-block rounded-lg bg-amber-500 px-4 py-2.5 text-sm font-semibold text-slate-900 hover:bg-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 focus:ring-offset-slate-900"
+                className="inline-flex w-full max-w-full whitespace-normal break-words items-center justify-center rounded-xl bg-amber-500 px-4 py-3 text-center text-sm font-semibold leading-snug text-slate-900 hover:bg-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2 focus:ring-offset-slate-900 sm:w-auto sm:max-w-[18rem] sm:px-4 sm:py-2.5"
               >
                 {lumaEvent?.url ? "Open registration" : "Event details & registration"}
               </a>
+              <button
+                type="button"
+                onClick={() => setSelectedCityIndex(null)}
+                className="inline-flex w-full items-center justify-center rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm font-semibold text-white/90 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/30 sm:w-auto sm:px-4 sm:py-2.5"
+              >
+                Close
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={() => setSelectedCityIndex(null)}
-              className="shrink-0 rounded-lg p-2 text-slate-400 hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/30"
-              aria-label="Close tour info"
-            >
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden>
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
           </div>
-        </div>
+        </>
       )}
     </section>
   );

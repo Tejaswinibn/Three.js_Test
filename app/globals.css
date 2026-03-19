@@ -2,11 +2,41 @@
 
 html {
   overflow-x: hidden;
+  scroll-behavior: smooth;
+  text-rendering: optimizeLegibility;
+  scrollbar-gutter: stable;
 }
 
 body {
   font-family: var(--font-jakarta), sans-serif;
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Accessibility widget (see components/accessibility/AccessibilityWidget.tsx) */
+html.a11y-dyslexia body {
+  font-family: var(--font-lexend), var(--font-jakarta), sans-serif;
+}
+
+/* Applied to #site-root in layout so the floating a11y FAB stays crisp */
+html.a11y-high-contrast #site-root {
+  filter: contrast(1.22) brightness(1.03);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 .academy-page img {
@@ -33,7 +63,7 @@ body {
 
 @layer utilities {
   .animate-marquee {
-    animation: marquee 25s linear infinite;
+    animation: marquee 28s linear infinite;
   }
 }
 

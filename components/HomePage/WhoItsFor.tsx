@@ -1,4 +1,5 @@
 import { JSX } from "react";
+import NextSudburyAnnouncement from "./NextSudburyAnnouncement";
 
 const AUDIENCE_CARDS = [
   {
@@ -76,15 +77,26 @@ export default function WhoItsFor(): JSX.Element {
         </div>
       </div>
 
-      {/* Bottom strip — orange-brown, repeated branding */}
-      <div
-        className="overflow-hidden py-4"
-        style={{ backgroundColor: "#c4a35a" }}
-        aria-hidden
-      >
-        <div className="flex flex-nowrap gap-12 whitespace-nowrap text-sm font-medium uppercase tracking-wider text-white">
-          {[...Array(8)].map((_, i) => (
-            <span key={i}>Enabled Canada Tour Making inclusion real</span>
+      {/* Bottom strip — light band (contrast with navy section), readable + premium */}
+      <div className="overflow-hidden border-t border-white/10 bg-[#F4F2EC] py-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]">
+        {/* Duplicate the track so marquee can loop seamlessly (keyframes translateX(-50%)) */}
+        <div className="animate-marquee flex w-max flex-nowrap">
+          {[0, 1].map((dup) => (
+            <div
+              key={dup}
+              className="flex flex-nowrap items-center gap-10 whitespace-nowrap px-2 text-sm font-semibold uppercase tracking-[0.18em] text-[#161821]/80"
+            >
+              <NextSudburyAnnouncement className="text-[#6B5A32] font-semibold" />
+              <span className="text-[#161821]/25" aria-hidden>
+                •
+              </span>
+              {[...Array(8)].map((_, i) => (
+                <span key={`${dup}-${i}`}>Enabled Canada Tour Making inclusion real</span>
+              ))}
+              <span className="text-[#161821]/25" aria-hidden>
+                •
+              </span>
+            </div>
           ))}
         </div>
       </div>
