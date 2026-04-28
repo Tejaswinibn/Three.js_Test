@@ -35,16 +35,26 @@ export default function Hero(): JSX.Element {
                 employers, educators, governments, and advocates together in cities
                 across Canada to advance accessibility and inclusive employment.
               </p>
-
-              <nav className="mt-6">
-                <Link href="#cities" className="inline-block">
-                  <FancyButton
-                    as="span"
-                    label="View Event Schedule"
-                    color="orange"
-                  />
-                </Link>
-              </nav>
+              <div className="flex flex-col-2 items-start gap-4">
+                <nav className="mt-6">
+                  <Link href="#cities" className="inline-block">
+                    <FancyButton
+                      as="span"
+                      label="View Event Schedule"
+                      color="orange"
+                    />
+                  </Link>
+                </nav>
+                <nav className="mt-6">
+                  <Link href="https://enabledtour.vercel.app/fellowship" className="inline-block">
+                    <FancyButton
+                      as="span"
+                      label="Apply for Fellowship"
+                      color="navy"
+                    />
+                  </Link>
+                </nav>
+              </div>
             </header>
 
             {/* Vertical divider + right column — title aligned with left column title */}
@@ -68,6 +78,7 @@ export default function Hero(): JSX.Element {
                 , the tour connects local action to national inclusion goals.
               </p>
             </div>
+            
           </div>
         </div>
       </section>
